@@ -1,0 +1,193 @@
+<!-- views/dashboard.html — Statistics & Analytics Dashboard -->
+<div class="page-wrap">
+
+  <!-- Page Header -->
+  <div class="page-header slide-up">
+    <h1 class="page-title"><i class="bi bi-speedometer2 me-2" style="font-size:2rem;"></i>Dashboard</h1>
+    <p class="page-subtitle">Real-time overview of all events, registrations, and platform activity.</p>
+  </div>
+
+  <!-- ===== STAT CARDS ROW ===== -->
+  <div class="row g-4 mb-5">
+
+    <div class="col-sm-6 col-xl-3 slide-up delay-1">
+      <div class="stat-card stat-card-1 h-100">
+        <span class="stat-delta delta-up">+{{stats.totalEvents}} total</span>
+        <div class="stat-icon"><i class="bi bi-calendar-event"></i></div>
+        <div class="stat-value text-primary-cems">{{stats.totalEvents}}</div>
+        <div class="stat-title">Total Events</div>
+        <div class="progress-bar-cems mt-2">
+          <div class="fill fill-primary" ng-style="{width: ((stats.totalEvents/10)*100) + '%'}"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3 slide-up delay-2">
+      <div class="stat-card stat-card-2 h-100">
+        <span class="stat-delta delta-up">+5 today</span>
+        <div class="stat-icon"><i class="bi bi-person-check"></i></div>
+        <div class="stat-value" style="color:var(--secondary);">{{stats.totalRegistrations}}</div>
+        <div class="stat-title">Total Registrations</div>
+        <div class="progress-bar-cems mt-2">
+          <div class="fill fill-secondary" ng-style="{width: ((stats.totalRegistrations/20)*100) + '%'}"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3 slide-up delay-3">
+      <div class="stat-card stat-card-3 h-100">
+        <span class="stat-delta delta-up">Next 30 days</span>
+        <div class="stat-icon"><i class="bi bi-calendar-check"></i></div>
+        <div class="stat-value text-accent">{{stats.upcomingCount}}</div>
+        <div class="stat-title">Upcoming Events</div>
+        <div class="progress-bar-cems mt-2">
+          <div class="fill fill-accent" ng-style="{width: ((stats.upcomingCount/stats.totalEvents)*100) + '%'}"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3 slide-up delay-4">
+      <div class="stat-card stat-card-4 h-100">
+        <span class="stat-delta delta-up">5 types</span>
+        <div class="stat-icon"><i class="bi bi-tags"></i></div>
+        <div class="stat-value" style="color:var(--warning);">{{stats.totalEvents}}</div>
+        <div class="stat-title">Active Events</div>
+        <div class="progress-bar-cems mt-2">
+          <div class="fill fill-warning" style="width:100%"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /stat cards -->
+
+  <!-- ===== SECOND ROW: Category + Recent Registrations ===== -->
+  <div class="row g-4 mb-5">
+
+    <!-- Category Breakdown -->
+    <div class="col-lg-5 slide-up delay-1">
+      <div class="glass-card p-4 h-100">
+        <div class="section-header">
+          <h3><i class="bi bi-pie-chart me-2 text-primary-cems"></i>Category Breakdown</h3>
+        </div>
+
+        <!-- Category rows — uses $scope.categoryItems from DashboardController -->
+        <div class="mb-4" ng-repeat="item in categoryItems">
+          <div class="d-flex justify-content-between mb-2" style="font-size:0.85rem;">
+            <span style="font-weight:600;" ng-style="{color: item.color}">{{item.name}}</span>
+            <span style="color:var(--text-muted);">
+              {{stats.categoryCounts[item.name]}} event(s) &mdash; {{catPercent(item.name)}}%
+            </span>
+          </div>
+          <div class="progress-bar-cems">
+            <div class="fill" ng-class="item.fillClass" ng-style="{width: catPercent(item.name) + '%'}"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Recent Registrations -->
+    <div class="col-lg-7 slide-up delay-2">
+      <div class="glass-card p-4 h-100">
+        <div class="section-header">
+          <h3><i class="bi bi-clock-history me-2 text-accent"></i>Recent Registrations</h3>
+          <a href="#/register" class="btn-outline-cems btn-sm-cems">
+            <i class="bi bi-plus"></i> Add
+          </a>
+        </div>
+
+        <ul class="recent-list">
+          <li ng-repeat="reg in recentRegistrations">
+            <div class="rl-avatar">{{reg.studentName | initials}}</div>
+            <div class="rl-info">
+              <strong>{{reg.studentName}}</strong>
+              <span>{{reg.eventName}} &bull; {{reg.department}}</span>
+            </div>
+            <span class="rl-badge" style="background:rgba(108,99,255,0.15); color:var(--primary-light);">
+              <i class="bi bi-check-circle me-1"></i>Registered
+            </span>
+          </li>
+        </ul>
+
+        <div ng-if="recentRegistrations.length === 0" class="empty-state" style="padding:30px 0;">
+          <div class="empty-icon" style="font-size:2rem;">📋</div>
+          <p>No registrations yet.</p>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== THIRD ROW: Upcoming Events + Quick Actions ===== -->
+  <div class="row g-4">
+
+    <!-- Upcoming Events Table-like list -->
+    <div class="col-lg-7 slide-up delay-1">
+      <div class="glass-card p-4">
+        <div class="section-header">
+          <h3><i class="bi bi-calendar-week me-2 text-warning"></i>Upcoming Events</h3>
+          <a href="#/events" class="btn-outline-cems btn-sm-cems">View All</a>
+        </div>
+
+        <ul class="recent-list">
+          <li ng-repeat="ev in upcomingEvents">
+            <div class="rl-avatar" style="border-radius:var(--radius-sm); font-size:1.2rem; background:var(--bg-glass);">
+              {{ev.icon}}
+            </div>
+            <div class="rl-info">
+              <strong>{{ev.name}}</strong>
+              <span>{{ev.date | niceDate}}</span>
+            </div>
+            <span class="rl-badge event-card-category" ng-class="ev.category | catClass">
+              {{ev.category}}
+            </span>
+          </li>
+        </ul>
+
+        <div ng-if="upcomingEvents.length === 0" class="empty-state" style="padding:30px 0;">
+          <div class="empty-icon" style="font-size:2rem;">📅</div>
+          <p>No upcoming events at this time.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="col-lg-5 slide-up delay-2">
+      <div class="glass-card p-4 h-100">
+        <div class="section-header">
+          <h3><i class="bi bi-lightning me-2 text-warning"></i>Quick Actions</h3>
+        </div>
+
+        <div class="d-flex flex-column gap-3 mt-2">
+          <a href="#/add-event" class="btn-primary-cems" style="justify-content:center; padding:14px;">
+            <i class="bi bi-plus-circle"></i> Add New Event
+          </a>
+          <a href="#/register" class="btn-outline-cems" style="justify-content:center; padding:14px;">
+            <i class="bi bi-person-plus"></i> Register Student
+          </a>
+          <a href="#/events" class="btn-outline-cems" style="justify-content:center; padding:14px;">
+            <i class="bi bi-calendar-event"></i> Browse All Events
+          </a>
+          <a href="#/home" class="btn-outline-cems" style="justify-content:center; padding:14px;">
+            <i class="bi bi-house-door"></i> Go to Home
+          </a>
+        </div>
+
+        <!-- Summary card -->
+        <div class="cems-alert cems-alert-info mt-4" style="flex-direction:column; gap:6px;">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-bar-chart-line alert-icon" style="font-size:1.1rem;"></i>
+            <strong>Platform Summary</strong>
+          </div>
+          <div style="font-size:0.83rem; color:var(--text-light); margin-top:4px;">
+            <span>{{stats.totalEvents}} events &bull; {{stats.totalRegistrations}} registrations &bull; {{stats.upcomingCount}} upcoming</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /third row -->
+
+</div>

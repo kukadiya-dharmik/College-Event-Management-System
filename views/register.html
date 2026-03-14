@@ -1,0 +1,243 @@
+<!-- views/register.html — Student Event Registration -->
+<div class="page-wrap">
+
+  <!-- Page Header -->
+  <div class="page-header slide-up">
+    <h1 class="page-title"><i class="bi bi-person-plus me-2" style="font-size:2rem;"></i>Register for Event</h1>
+    <p class="page-subtitle">Fill in your details to register for a college event. We'll send a confirmation to your email.</p>
+  </div>
+
+  <!-- ===== SUCCESS CARD ===== -->
+  <div ng-if="successData" class="slide-up">
+    <div class="cems-alert cems-alert-success mb-5" style="flex-direction:column; align-items:flex-start; padding:30px 28px;">
+      <div style="display:flex; align-items:center; gap:14px; margin-bottom:16px;">
+        <div style="
+          width:56px; height:56px;
+          background:rgba(67,233,123,0.15);
+          border-radius:50%;
+          display:flex; align-items:center; justify-content:center;
+          font-size:1.6rem;">✅</div>
+        <div>
+          <strong style="font-size:1.2rem; display:block; margin-bottom:2px;">Registration Successful! 🎉</strong>
+          <span style="opacity:0.8; font-size:0.88rem;">Your spot has been reserved</span>
+        </div>
+      </div>
+
+      <!-- Confirmation details -->
+      <div style="
+        background:rgba(0,0,0,0.2);
+        border-radius:12px;
+        padding:20px 22px;
+        width:100%;
+        margin-bottom:20px;
+      ">
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <div style="font-size:0.75rem; color:rgba(67,233,123,0.7); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Student Name</div>
+            <div style="font-weight:600;">{{successData.name}}</div>
+          </div>
+          <div class="col-sm-6">
+            <div style="font-size:0.75rem; color:rgba(67,233,123,0.7); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Email</div>
+            <div style="font-weight:600;">{{successData.email}}</div>
+          </div>
+          <div class="col-sm-6">
+            <div style="font-size:0.75rem; color:rgba(67,233,123,0.7); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Department</div>
+            <div style="font-weight:600;">{{successData.department}}</div>
+          </div>
+          <div class="col-sm-6">
+            <div style="font-size:0.75rem; color:rgba(67,233,123,0.7); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Registered Event</div>
+            <div style="font-weight:600;">{{successData.eventName}}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-3 flex-wrap">
+        <button class="btn-primary-cems" ng-click="resetForm(registrationForm)">
+          <i class="bi bi-plus-circle"></i> Register Another
+        </button>
+        <a href="#/events" class="btn-outline-cems" style="border-color:rgba(67,233,123,0.5); color:#43E97B;">
+          <i class="bi bi-calendar-event"></i> Browse Events
+        </a>
+        <a href="#/dashboard" class="btn-outline-cems" style="border-color:rgba(67,233,123,0.5); color:#43E97B;">
+          <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FORM ===== -->
+  <div ng-if="!successData">
+    <div class="row g-5">
+      <!-- Form column -->
+      <div class="col-lg-7 slide-up delay-1">
+
+        <!-- Error alert -->
+        <div ng-if="errorMsg" class="cems-alert cems-alert-danger mb-4">
+          <i class="bi bi-exclamation-triangle alert-icon"></i>
+          <div class="alert-body">
+            <strong>Incomplete Form</strong>
+            <p>{{errorMsg}}</p>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <form name="registrationForm" ng-submit="submitRegistration(registrationForm)" novalidate>
+
+            <!-- Student Name -->
+            <div class="form-group-cems">
+              <label class="form-label-cems" for="studentName">
+                Student Name <span class="required">*</span>
+              </label>
+              <input
+                type="text"
+                id="studentName"
+                name="studentName"
+                class="cems-input w-100"
+                ng-class="{
+                  'is-invalid': submitted && registrationForm.studentName.$invalid,
+                  'is-valid':   submitted && registrationForm.studentName.$valid
+                }"
+                placeholder="Enter your full name"
+                ng-model="registration.studentName"
+                ng-minlength="2"
+                required
+              />
+              <div class="field-error" ng-if="submitted && registrationForm.studentName.$error.required">
+                <i class="bi bi-exclamation-circle"></i> Your name is required.
+              </div>
+              <div class="field-error" ng-if="submitted && registrationForm.studentName.$error.minlength">
+                <i class="bi bi-exclamation-circle"></i> Name must be at least 2 characters.
+              </div>
+            </div>
+
+            <!-- Email -->
+            <div class="form-group-cems">
+              <label class="form-label-cems" for="studentEmail">
+                Email Address <span class="required">*</span>
+              </label>
+              <input
+                type="email"
+                id="studentEmail"
+                name="email"
+                class="cems-input w-100"
+                ng-class="{
+                  'is-invalid': submitted && registrationForm.email.$invalid,
+                  'is-valid':   submitted && registrationForm.email.$valid
+                }"
+                placeholder="student@college.edu"
+                ng-model="registration.email"
+                required
+              />
+              <div class="field-error" ng-if="submitted && registrationForm.email.$error.required">
+                <i class="bi bi-exclamation-circle"></i> Email address is required.
+              </div>
+              <div class="field-error" ng-if="submitted && registrationForm.email.$error.email">
+                <i class="bi bi-exclamation-circle"></i> Please enter a valid email address.
+              </div>
+            </div>
+
+            <!-- Department -->
+            <div class="form-group-cems">
+              <label class="form-label-cems" for="department">
+                Department <span class="required">*</span>
+              </label>
+              <select
+                id="department"
+                name="department"
+                class="cems-select w-100"
+                ng-class="{
+                  'is-invalid': submitted && registrationForm.department.$invalid,
+                  'is-valid':   submitted && registrationForm.department.$valid
+                }"
+                ng-model="registration.department"
+                ng-options="dept for dept in departments"
+                required
+              >
+                <option value="" disabled selected>-- Select your department --</option>
+              </select>
+              <div class="field-error" ng-if="submitted && registrationForm.department.$error.required">
+                <i class="bi bi-exclamation-circle"></i> Please select your department.
+              </div>
+            </div>
+
+            <!-- Select Event -->
+            <div class="form-group-cems">
+              <label class="form-label-cems" for="selectedEvent">
+                Select Event <span class="required">*</span>
+              </label>
+              <select
+                id="selectedEvent"
+                name="eventId"
+                class="cems-select w-100"
+                ng-class="{
+                  'is-invalid': submitted && registrationForm.eventId.$invalid,
+                  'is-valid':   submitted && registrationForm.eventId.$valid
+                }"
+                ng-model="registration.eventId"
+                required
+              >
+                <option value="" disabled selected>-- Choose an event --</option>
+                <option ng-repeat="ev in events" value="{{ev.id}}">
+                  {{ev.name}} ({{ev.date | niceDate}})
+                </option>
+              </select>
+              <div class="field-error" ng-if="submitted && registrationForm.eventId.$error.required">
+                <i class="bi bi-exclamation-circle"></i> Please select an event to register for.
+              </div>
+            </div>
+
+            <!-- Submit -->
+            <div class="d-flex gap-3 mt-4 flex-wrap">
+              <button type="submit" class="btn-primary-cems">
+                <i class="bi bi-check2-circle"></i>
+                Confirm Registration
+              </button>
+              <a href="#/events" class="btn-outline-cems">
+                <i class="bi bi-arrow-left"></i>
+                Back to Events
+              </a>
+            </div>
+
+          </form>
+        </div><!-- /form-section -->
+      </div>
+
+      <!-- Info sidebar -->
+      <div class="col-lg-5 slide-up delay-2">
+        <div class="glass-card p-4 mb-4">
+          <h5 class="mb-4" style="font-weight:700;">
+            <i class="bi bi-info-circle me-2 text-primary-cems"></i>Registration Info
+          </h5>
+          <ul style="color:var(--text-muted); font-size:0.88rem; padding-left:18px; line-height:2.2;">
+            <li>Registration is free and open to all students</li>
+            <li>Each student can register for multiple events</li>
+            <li>Confirmation sent to your email</li>
+            <li>Bring your college ID to the event</li>
+            <li>For team events, every member must register</li>
+          </ul>
+        </div>
+
+        <!-- Available Events quick list -->
+        <div class="glass-card p-4">
+          <h5 class="mb-4" style="font-weight:700;">
+            <i class="bi bi-calendar3 me-2 text-accent"></i>Open Events ({{events.length}})
+          </h5>
+          <ul class="recent-list" style="max-height:260px; overflow-y:auto;">
+            <li ng-repeat="ev in events">
+              <div class="rl-avatar" style="background:linear-gradient(135deg,var(--primary),var(--primary-light));">
+                {{ev.icon}}
+              </div>
+              <div class="rl-info">
+                <strong>{{ev.name}}</strong>
+                <span>{{ev.date | niceDate}}</span>
+              </div>
+              <span class="rl-badge event-card-category" ng-class="ev.category | catClass">{{ev.category}}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+    </div><!-- /row -->
+  </div><!-- /ng-if -->
+
+</div>

@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="eventApp">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>College Event Management System</title>
+
+  <!-- Bootstrap 5 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- AngularJS 1.8 -->
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular-route.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular-animate.min.js"></script>
+</head>
+<body ng-controller="MainController">
+
+  <!-- ===== TOP NAV BAR ===== -->
+  <nav class="navbar navbar-expand-lg cems-navbar fixed-top" ng-class="{'scrolled': isScrolled}">
+    <div class="container-fluid px-4">
+      <!-- Brand -->
+      <a class="navbar-brand d-flex align-items-center gap-2" href="#/home">
+        <div class="brand-icon">
+          <i class="bi bi-mortarboard-fill"></i>
+        </div>
+        <div>
+          <span class="brand-title">CEMS</span>
+          <span class="brand-sub d-none d-md-inline"> &nbsp;College Events</span>
+        </div>
+      </a>
+
+      <!-- Toggle -->
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+        <span class="toggler-icon"><i class="bi bi-list"></i></span>
+      </button>
+
+      <!-- Nav Links -->
+      <div class="collapse navbar-collapse" id="navMenu">
+        <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
+          <li class="nav-item">
+            <a class="nav-link cems-nav-link" href="#/home" ng-class="{'active': isActive('/home')}">
+              <i class="bi bi-house-door me-1"></i>Home
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link cems-nav-link" href="#/events" ng-class="{'active': isActive('/events')}">
+              <i class="bi bi-calendar-event me-1"></i>Events
+            </a>
+          </li>
+          <!-- Add Event: admin only -->
+          <li class="nav-item" ng-if="isAdmin()">
+            <a class="nav-link cems-nav-link" href="#/add-event" ng-class="{'active': isActive('/add-event')}">
+              <i class="bi bi-plus-circle me-1"></i>Add Event
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link cems-nav-link" href="#/register" ng-class="{'active': isActive('/register')}">
+              <i class="bi bi-person-plus me-1"></i>Register
+            </a>
+          </li>
+          <!-- Dashboard: admin only -->
+          <li class="nav-item" ng-if="isAdmin()">
+            <a class="nav-link cems-nav-link" href="#/dashboard" ng-class="{'active': isActive('/dashboard')}">
+              <i class="bi bi-speedometer2 me-1"></i>Dashboard
+            </a>
+          </li>
+          <li class="nav-item ms-lg-2">
+            <span class="badge-pill-events">
+              <i class="bi bi-calendar3 me-1"></i>
+              {{totalEvents}} Events
+            </span>
+          </li>
+          <!-- Admin badge + Logout -->
+          <li class="nav-item ms-lg-1" ng-if="isAdmin()">
+            <span class="admin-badge-nav">
+              <i class="bi bi-shield-check"></i> Admin
+            </span>
+          </li>
+          <li class="nav-item ms-lg-1" ng-if="isAdmin()">
+            <button class="btn-logout-cems" ng-click="logout()">
+              <i class="bi bi-box-arrow-right"></i> Logout
+            </button>
+          </li>
+          <!-- Login button when not admin -->
+          <li class="nav-item ms-lg-2" ng-if="!isAdmin()">
+            <a href="#/login" class="btn-primary-cems btn-sm-cems">
+              <i class="bi bi-shield-lock"></i> Admin Login
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== PAGE OUTLET ===== -->
+  <main class="main-content">
+    <div ng-view class="ng-view-container"></div>
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="cems-footer">
+    <div class="container text-center">
+      <p class="mb-1">
+        <i class="bi bi-mortarboard-fill me-2"></i>
+        <strong>College Event Management System</strong>
+      </p>
+      <p class="footer-sub mb-0">Built with AngularJS 1.x &bull; Modern SPA &bull; &copy; 2026</p>
+    </div>
+  </footer>
+
+  <!-- =============================================================
+       INLINE TEMPLATES — loaded into $templateCache at parse time.
+       This avoids XHR file:// CORS errors when opening directly.
+  ============================================================== -->
+
+  <!-- ===== LOGIN PAGE ===== -->
+  <script type="text/ng-template" id="views/login.html">
+  <div class="login-page">
+    <div class="login-card">
+      <div class="login-logo"><i class="bi bi-shield-lock-fill"></i></div>
+      <h2 class="login-title">Admin Login</h2>
+      <p class="login-subtitle">Access the admin panel to manage events and view the dashboard.</p>
+
+      <!-- Credentials hint -->
+      <div class="admin-hint">
+        <i class="bi bi-info-circle hint-icon"></i>
+        <span>Use username <code>admin</code> and password <code>admin123</code> to login.</span>
+      </div>
+
+      <!-- Error alert -->
+      <div ng-if="errorMsg" class="cems-alert cems-alert-danger mb-4">
+        <i class="bi bi-exclamation-triangle alert-icon"></i>
+        <div class="alert-body">
+          <strong>Login Failed</strong>
+          <p>{{errorMsg}}</p>
+        </div>
+      </div>
+
+      <form name="loginForm" ng-submit="doLogin(loginForm)" novalidate>
+
+        <!-- Username -->
+        <div class="form-group-cems">
+          <label class="form-label-cems" for="loginUser">
+            Username <span class="required">*</span>
+          </label>
+          <input
+            type="text"
+            id="loginUser"
+            name="username"
+            class="cems-input w-100"
+            ng-class="{'is-invalid': submitted && loginForm.username.$invalid, 'is-valid': submitted && loginForm.username.$valid}"
+            placeholder="Enter admin username"
+            ng-model="credentials.username"
+            required
+            autocomplete="username"
+          />
+          <div class="field-error" ng-if="submitted && loginForm.username.$error.required">
+            <i class="bi bi-exclamation-circle"></i> Username is required.
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group-cems">
+          <label class="form-label-cems" for="loginPass">
+            Password <span class="required">*</span>
+          </label>
+          <div class="input-wrap">
+            <input
+              id="loginPass"
+              name="password"
+              class="cems-input w-100"
+              ng-attr-type="{{showPass ? 'text' : 'password'}}"
+              ng-class="{'is-invalid': submitted && loginForm.password.$invalid, 'is-valid': submitted && loginForm.password.$valid}"
+              placeholder="Enter admin password"
+              ng-model="credentials.password"
+              required
+              autocomplete="current-password"
+            />
+            <button type="button" class="eye-btn" ng-click="showPass = !showPass" tabindex="-1">
+              <i class="bi" ng-class="showPass ? 'bi-eye-slash' : 'bi-eye'"></i>
+            </button>
+          </div>
+          <div class="field-error" ng-if="submitted && loginForm.password.$error.required">
+            <i class="bi bi-exclamation-circle"></i> Password is required.
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="btn-primary-cems w-100 mt-2" style="justify-content:center; padding:13px;">
+          <i class="bi bi-shield-check"></i>
+          Sign In as Admin
+        </button>
+
+        <div class="text-center mt-4">
+          <a href="#/home" style="color:var(--text-muted); font-size:0.85rem; text-decoration:none;">
+            <i class="bi bi-arrow-left me-1"></i>Back to Home
+          </a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+  </script>
+
+  <!-- ===== HOME ===== -->
+  <script type="text/ng-template" id="views/home.html">
+  <div>
+    <!-- HERO SECTION -->
+    <section class="hero-section">
+      <div class="hero-content">
+        <div class="row align-items-center g-5">
+          <!-- Left -->
+          <div class="col-lg-6">
+            <div class="hero-badge">
+              <span class="dot"></span>
+              Live Event Platform
+            </div>
+            <h1 class="hero-title">
+              Your Campus,<br />
+              <span class="gradient-text">Reimagined.</span>
+            </h1>
+            <p class="hero-description">
+              Discover, manage, and register for college events &mdash; all in one beautifully designed
+              platform. From technical fests to cultural nights, stay connected to your campus life.
+            </p>
+            <div class="hero-actions">
+              <a href="#/events" class="btn-primary-cems">
+                <i class="bi bi-calendar-event"></i> Explore Events
+              </a>
+              <a href="#/register" class="btn-outline-cems">
+                <i class="bi bi-person-plus"></i> Register Now
+              </a>
+            </div>
+            <!-- Stat tiles -->
+            <div class="hero-stats">
+              <div class="hero-stat-tile slide-up delay-1">
+                <div class="stat-num">{{totalEvents}}+</div>
+                <div class="stat-label">Events</div>
+              </div>
+              <div class="hero-stat-tile slide-up delay-2">
+                <div class="stat-num">{{totalRegistrations}}+</div>
+                <div class="stat-label">Registered</div>
+              </div>
+              <div class="hero-stat-tile slide-up delay-3">
+                <div class="stat-num">{{categories.length}}</div>
+                <div class="stat-label">Categories</div>
+              </div>
+            </div>
+          </div>
+          <!-- Right visual -->
+          <div class="col-lg-6 d-none d-lg-block">
+            <div class="hero-visual" style="position:relative; min-height:380px;">
+              <div style="
+                width:340px; height:340px;
+                margin:0 auto;
+                background:linear-gradient(135deg,rgba(108,99,255,0.15),rgba(67,233,123,0.08));
+                border:1px solid rgba(108,99,255,0.2);
+                border-radius:50%;
+                display:flex; align-items:center; justify-content:center;
+                font-size:7rem;
+                box-shadow:0 0 80px rgba(108,99,255,0.2);
+              ">&#127891;</div>
+              <div class="floating-card fc-1">
+                <div class="fc-icon" style="background:rgba(56,182,255,0.15);color:#38B6FF;">&#128187;</div>
+                <div class="fc-text">
+                  <strong>Tech Symposium</strong>
+                  <span>March 25, 2026</span>
+                </div>
+              </div>
+              <div class="floating-card fc-2">
+                <div class="fc-icon" style="background:rgba(67,233,123,0.15);color:#43E97B;">&#127917;</div>
+                <div class="fc-text">
+                  <strong>Cultural Night</strong>
+                  <span>March 28, 2026</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- UPCOMING EVENTS STRIP -->
+    <section class="upcoming-strip">
+      <div class="container">
+        <div class="text-center mb-5">
+          <div class="section-label">Don't miss out</div>
+          <h2 class="section-title">Upcoming Events</h2>
+          <p style="color:var(--text-muted); max-width:500px; margin:0 auto;">
+            Get a head start &mdash; browse the most anticipated events on campus and secure your spot today.
+          </p>
+        </div>
+        <div class="row g-4">
+          <div class="col-md-4 slide-up"
+               ng-repeat="ev in upcomingEvents"
+               ng-style="{'animation-delay': ($index * 0.1) + 's'}">
+            <div class="event-card h-100">
+              <div class="event-card-header">
+                <span class="event-card-category" ng-class="ev.category | catClass">
+                  {{ev.icon}} {{ev.category}}
+                </span>
+                <h3 class="event-card-title">{{ev.name}}</h3>
+                <div class="event-card-date">
+                  <i class="bi bi-calendar3"></i>
+                  {{ev.date | niceDate}}
+                </div>
+              </div>
+              <div class="event-card-body">
+                <p class="event-card-desc">{{ev.description}}</p>
+                <div class="event-card-footer">
+                  <a href="#/register" class="btn-primary-cems btn-sm-cems">
+                    <i class="bi bi-person-plus"></i> Register
+                  </a>
+                  <span class="detail-pill">
+                    <i class="bi bi-arrow-right-circle"></i>
+                    <a href="#/events" style="color:inherit;text-decoration:none;">All events</a>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-12" ng-if="upcomingEvents.length === 0">
+            <div class="empty-state">
+              <div class="empty-icon">&#128197;</div>
+              <h4>No upcoming events</h4>
+              <p>Check back soon or add a new event.</p>
+            </div>
+          </div>
+        </div>
+        <div class="text-center mt-5">
+          <a href="#/events" class="btn-outline-cems">
+            <i class="bi bi-grid"></i> View All Events
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- CATEGORY PILLS -->
+    <section style="padding:60px 24px; background:var(--bg-dark);">
+      <div class="container">
+        <div class="text-center mb-5">
+          <div class="section-label">Browse by type</div>
+          <h2 class="section-title">Event Categories</h2>
+        </div>
+        <div class="d-flex flex-wrap justify-content-center gap-3">
+          <a href="#/events" class="btn-outline-cems fade-in delay-1" ng-repeat="cat in categories">
+            <span ng-switch="cat">
+              <span ng-switch-when="Technical">&#128187;</span>
+              <span ng-switch-when="Cultural">&#127917;</span>
+              <span ng-switch-when="Sports">&#9917;</span>
+              <span ng-switch-when="Academic">&#128218;</span>
+              <span ng-switch-default>&#127919;</span>
+            </span>
+            {{cat}}
+          </a>
+        </div>
+      </div>
+    </section>
+  </div>
+  </script>
+
+  <!-- ===== EVENTS LIST ===== -->
+  <script type="text/ng-template" id="views/events.html">
+  <div class="page-wrap">
+    <div class="page-header slide-up">
+      <h1 class="page-title"><i class="bi bi-calendar-event me-2" style="font-size:2rem;"></i>All Events</h1>
+      <p class="page-subtitle">Browse and search college events. Register for the ones you love!</p>
+    </div>
+
+    <!-- Delete alert -->
+    <div ng-if="deleteMsg" class="cems-alert cems-alert-danger mb-4">
+      <i class="bi bi-trash3 alert-icon"></i>
+      <div class="alert-body">
+        <strong>Deleted</strong>
+        <p>{{deleteMsg}}</p>
+      </div>
+    </div>
+
+    <div class="filter-bar slide-up delay-1">
+      <div class="search-wrap">
+        <i class="bi bi-search search-icon"></i>
+        <input type="text" class="cems-input" placeholder="Search events by name, category, description..."
+               ng-model="searchTerm" id="searchInput" />
+      </div>
+      <select class="cems-select" ng-model="selectedCat" id="categoryFilter">
+        <option ng-repeat="cat in categories" value="{{cat}}">{{cat}}</option>
+      </select>
+      <a href="#/add-event" class="btn-primary-cems" ng-if="isAdmin()">
+        <i class="bi bi-plus-lg"></i> Add Event
+      </a>
+    </div>
+
+    <div class="mb-4 text-muted-cems" style="font-size:0.88rem; font-weight:500;">
+      Showing <strong style="color:var(--primary-light);">
+        {{(events | searchEvents:searchTerm | categoryFilter:selectedCat).length}}
+      </strong> event(s)
+      <span ng-if="searchTerm"> matching "<em>{{searchTerm}}</em>"</span>
+      <span ng-if="selectedCat !== 'All'"> in <em>{{selectedCat}}</em></span>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-sm-6 col-lg-4"
+           ng-repeat="ev in events | searchEvents:searchTerm | categoryFilter:selectedCat">
+        <div class="event-card h-100">
+          <div class="event-card-header">
+            <span class="event-card-category" ng-class="ev.category | catClass">
+              {{ev.icon}} {{ev.category}}
+            </span>
+            <h3 class="event-card-title">{{ev.name}}</h3>
+            <div class="event-card-date">
+              <i class="bi bi-calendar3"></i>
+              {{ev.date | niceDate}}
+            </div>
+          </div>
+          <div class="event-card-body">
+            <p class="event-card-desc">{{ev.description}}</p>
+            <div class="event-card-footer mt-auto">
+              <a href="#/register" class="btn-primary-cems btn-sm-cems">
+                <i class="bi bi-person-plus"></i> Register
+              </a>
+              <span class="detail-pill" ng-if="!isAdmin()">
+                <i class="bi bi-calendar3"></i> {{ev.date | niceDate}}
+              </span>
+              <button class="btn-danger-cems" ng-click="deleteEvent(ev.id)" title="Delete event" ng-if="isAdmin()">
+                <i class="bi bi-trash3"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state"
+         ng-if="(events | searchEvents:searchTerm | categoryFilter:selectedCat).length === 0">
+      <div class="empty-icon">&#128269;</div>
+      <h4>No events found</h4>
+      <p ng-if="searchTerm">No results for "<strong>{{searchTerm}}</strong>". Try a different keyword.</p>
+      <p ng-if="!searchTerm && selectedCat !== 'All'">No events in the <strong>{{selectedCat}}</strong> category yet.</p>
+      <p ng-if="!searchTerm && selectedCat === 'All'">No events have been added yet.</p>
+      <a href="#/add-event" class="btn-primary-cems mt-4 d-inline-flex" ng-if="isAdmin()">
+        <i class="bi bi-plus-circle"></i> Add First Event
+      </a>
+    </div>
+  </div>
+  </script>
+
+  <!-- ===== ADD EVENT ===== -->
+  <script type="text/ng-template" id="views/add-event.html">
+  <div class="page-wrap">
+    <div class="page-header slide-up">
+      <h1 class="page-title"><i class="bi bi-plus-circle me-2" style="font-size:2rem;"></i>Add New Event</h1>
+      <p class="page-subtitle">Fill in the details below to create a new event on the platform.</p>
+    </div>
+    <div class="row g-5">
+      <div class="col-lg-7 slide-up delay-1">
+        <div ng-if="successMsg" class="cems-alert cems-alert-success mb-4">
+          <i class="bi bi-check-circle alert-icon"></i>
+          <div class="alert-body">
+            <strong>Event Created!</strong>
+            <p>{{successMsg}}</p>
+          </div>
+        </div>
+        <div ng-if="errorMsg" class="cems-alert cems-alert-danger mb-4">
+          <i class="bi bi-exclamation-triangle alert-icon"></i>
+          <div class="alert-body">
+            <strong>Validation Error</strong>
+            <p>{{errorMsg}}</p>
+          </div>
+        </div>
+        <div class="form-section">
+          <form name="addEventForm" ng-submit="submitEvent(addEventForm)" novalidate>
+
+            <div class="form-group-cems">
+              <label class="form-label-cems" for="eventName">Event Name <span class="required">*</span></label>
+              <input type="text" id="eventName" name="name" class="cems-input w-100"
+                     ng-class="{'is-invalid': submitted && addEventForm.name.$invalid, 'is-valid': submitted && addEventForm.name.$valid}"
+                     placeholder="e.g. Annual Tech Fest 2026"
+                     ng-model="newEvent.name" ng-minlength="3" ng-maxlength="100" required />
+              <div class="field-error" ng-if="submitted && addEventForm.name.$error.required">
+                <i class="bi bi-exclamation-circle"></i> Event name is required.
+              </div>
+              <div class="field-error" ng-if="submitted && addEventForm.name.$error.minlength">
+                <i class="bi bi-exclamation-circle"></i> Name must be at least 3 characters.
+              </div>
+              <div class="field-error" ng-if="submitted && addEventForm.name.$error.maxlength">
+                <i class="bi bi-exclamation-circle"></i> Name cannot exceed 100 characters.
+              </div>
+            </div>
+
+            <div class="form-group-cems">
+              <label class="form-label-cems" for="eventDate">Event Date <span class="required">*</span></label>
+              <input type="date" id="eventDate" name="date" class="cems-input w-100"
+                     ng-class="{'is-invalid': submitted && addEventForm.date.$invalid, 'is-valid': submitted && addEventForm.date.$valid}"
+                     ng-model="newEvent.date" required />
+              <div class="field-error" ng-if="submitted && addEventForm.date.$error.required">
+                <i class="bi bi-exclamation-circle"></i> Please select an event date.
+              </div>
+            </div>
+
+            <div class="form-group-cems">
+              <label class="form-label-cems" for="eventCategory">Category <span class="required">*</span></label>
+              <select id="eventCategory" name="category" class="cems-select w-100"
+                      ng-class="{'is-invalid': submitted && addEventForm.category.$invalid, 'is-valid': submitted && addEventForm.category.$valid}"
+                      ng-model="newEvent.category" ng-options="cat for cat in categories" required>
+                <option value="" disabled selected>-- Select a category --</option>
+              </select>
+              <div class="field-error" ng-if="submitted && addEventForm.category.$error.required">
+                <i class="bi bi-exclamation-circle"></i> Please select a category.
+              </div>
+            </div>
+
+            <div class="form-group-cems">
+              <label class="form-label-cems" for="eventDesc">Description <span class="required">*</span></label>
+              <textarea id="eventDesc" name="description" class="cems-input w-100" rows="5"
+                        ng-class="{'is-invalid': submitted && addEventForm.description.$invalid, 'is-valid': submitted && addEventForm.description.$valid}"
+                        placeholder="Describe what this event is about..."
+                        ng-model="newEvent.description" ng-minlength="20" required></textarea>
+              <div class="field-error" ng-if="submitted && addEventForm.description.$error.required">
+                <i class="bi bi-exclamation-circle"></i> Description is required.
+              </div>
+              <div class="field-error" ng-if="submitted && addEventForm.description.$error.minlength">
+                <i class="bi bi-exclamation-circle"></i> Description must be at least 20 characters.
+              </div>
+              <div class="form-hint">
+                <i class="bi bi-info-circle me-1"></i> Minimum 20 characters.
+              </div>
+            </div>
+
+            <div class="d-flex gap-3 mt-4">
+              <button type="submit" class="btn-primary-cems">
+                <i class="bi bi-plus-circle"></i> Create Event
+              </button>
+              <a href="#/events" class="btn-outline-cems">
+                <i class="bi bi-arrow-left"></i> Cancel
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-lg-5 slide-up delay-2">
+        <div class="glass-card p-4 mb-4">
+          <h5 class="mb-3" style="font-weight:700;">
+            <i class="bi bi-lightbulb me-2 text-warning"></i>Tips for a Great Event
+          </h5>
+          <ul style="color:var(--text-muted); font-size:0.88rem; padding-left:18px; line-height:2;">
+            <li>Use a clear, descriptive event name</li>
+            <li>Set a realistic date with enough preparation time</li>
+            <li>Choose the most fitting category</li>
+            <li>Write a compelling description</li>
+            <li>Mention prizes, certificates, etc.</li>
+          </ul>
+        </div>
+        <div class="glass-card p-4">
+          <h5 class="mb-4" style="font-weight:700;">
+            <i class="bi bi-tag me-2 text-primary-cems"></i> Available Categories
+          </h5>
+          <div class="d-flex flex-wrap gap-2">
+            <span ng-repeat="cat in categories" class="event-card-category" ng-class="cat | catClass">{{cat}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </script>
+
+  <!-- ===== REGISTER ===== -->
+  <script type="text/ng-template" id="views/register.html">
+  <div class="page-wrap">
+    <div class="page-header slide-up">
+      <h1 class="page-title"><i class="bi bi-person-plus me-2" style="font-size:2rem;"></i>Register for Event</h1>
+      <p class="page-subtitle">Fill in your details to register for a college event.</p>
+    </div>
+
+    <!-- SUCCESS CARD -->
+    <div ng-if="successData" class="slide-up">
+      <div class="cems-alert cems-alert-success mb-5"
+           style="flex-direction:column; align-items:flex-start; padding:30px 28px;">
+        <div style="display:flex; align-items:center; gap:14px; margin-bottom:16px;">
+          <div style="width:56px;height:56px;background:rgba(67,233,123,0.15);border-radius:50%;
+                      display:flex;align-items:center;justify-content:center;font-size:1.6rem;">&#9989;</div>
+          <div>
+            <strong style="font-size:1.2rem;display:block;margin-bottom:2px;">Registration Successful! &#127881;</strong>
+            <span style="opacity:0.8;font-size:0.88rem;">Your spot has been reserved</span>
+          </div>
+        </div>
+        <div style="background:rgba(0,0,0,0.2);border-radius:12px;padding:20px 22px;width:100%;margin-bottom:20px;">
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <div style="font-size:0.75rem;color:rgba(67,233,123,0.7);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Student Name</div>
+              <div style="font-weight:600;">{{successData.name}}</div>
+            </div>
+            <div class="col-sm-6">
+              <div style="font-size:0.75rem;color:rgba(67,233,123,0.7);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Email</div>
+              <div style="font-weight:600;">{{successData.email}}</div>
+            </div>
+            <div class="col-sm-6">
+              <div style="font-size:0.75rem;color:rgba(67,233,123,0.7);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Department</div>
+              <div style="font-weight:600;">{{successData.department}}</div>
+            </div>
+            <div class="col-sm-6">
+              <div style="font-size:0.75rem;color:rgba(67,233,123,0.7);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Registered Event</div>
+              <div style="font-weight:600;">{{successData.eventName}}</div>
+            </div>
+          </div>
+        </div>
+        <div class="d-flex gap-3 flex-wrap">
+          <button class="btn-primary-cems" ng-click="resetForm(registrationForm)">
+            <i class="bi bi-plus-circle"></i> Register Another
+          </button>
+          <a href="#/events" class="btn-outline-cems" style="border-color:rgba(67,233,123,0.5);color:#43E97B;">
+            <i class="bi bi-calendar-event"></i> Browse Events
+          </a>
+          <a href="#/dashboard" class="btn-outline-cems" style="border-color:rgba(67,233,123,0.5);color:#43E97B;">
+            <i class="bi bi-speedometer2"></i> Dashboard
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORM -->
+    <div ng-if="!successData">
+      <div class="row g-5">
+        <div class="col-lg-7 slide-up delay-1">
+          <div ng-if="errorMsg" class="cems-alert cems-alert-danger mb-4">
+            <i class="bi bi-exclamation-triangle alert-icon"></i>
+            <div class="alert-body">
+              <strong>Incomplete Form</strong>
+              <p>{{errorMsg}}</p>
+            </div>
+          </div>
+          <div class="form-section">
+            <form name="registrationForm" ng-submit="submitRegistration(registrationForm)" novalidate>
+
+              <div class="form-group-cems">
+                <label class="form-label-cems" for="studentName">Student Name <span class="required">*</span></label>
+                <input type="text" id="studentName" name="studentName" class="cems-input w-100"
+                       ng-class="{'is-invalid': submitted && registrationForm.studentName.$invalid, 'is-valid': submitted && registrationForm.studentName.$valid}"
+                       placeholder="Enter your full name"
+                       ng-model="registration.studentName" ng-minlength="2" required />
+                <div class="field-error" ng-if="submitted && registrationForm.studentName.$error.required">
+                  <i class="bi bi-exclamation-circle"></i> Your name is required.
+                </div>
+                <div class="field-error" ng-if="submitted && registrationForm.studentName.$error.minlength">
+                  <i class="bi bi-exclamation-circle"></i> Name must be at least 2 characters.
+                </div>
+              </div>
+
+              <div class="form-group-cems">
+                <label class="form-label-cems" for="studentEmail">Email Address <span class="required">*</span></label>
+                <input type="email" id="studentEmail" name="email" class="cems-input w-100"
+                       ng-class="{'is-invalid': submitted && registrationForm.email.$invalid, 'is-valid': submitted && registrationForm.email.$valid}"
+                       placeholder="student@college.edu"
+                       ng-model="registration.email" required />
+                <div class="field-error" ng-if="submitted && registrationForm.email.$error.required">
+                  <i class="bi bi-exclamation-circle"></i> Email address is required.
+                </div>
+                <div class="field-error" ng-if="submitted && registrationForm.email.$error.email">
+                  <i class="bi bi-exclamation-circle"></i> Please enter a valid email address.
+                </div>
+              </div>
+
+              <div class="form-group-cems">
+                <label class="form-label-cems" for="dept">Department <span class="required">*</span></label>
+                <select id="dept" name="department" class="cems-select w-100"
+                        ng-class="{'is-invalid': submitted && registrationForm.department.$invalid, 'is-valid': submitted && registrationForm.department.$valid}"
+                        ng-model="registration.department" ng-options="d for d in departments" required>
+                  <option value="" disabled selected>-- Select your department --</option>
+                </select>
+                <div class="field-error" ng-if="submitted && registrationForm.department.$error.required">
+                  <i class="bi bi-exclamation-circle"></i> Please select your department.
+                </div>
+              </div>
+
+              <div class="form-group-cems">
+                <label class="form-label-cems" for="selectedEvent">Select Event <span class="required">*</span></label>
+                <select id="selectedEvent" name="eventId" class="cems-select w-100"
+                        ng-class="{'is-invalid': submitted && registrationForm.eventId.$invalid, 'is-valid': submitted && registrationForm.eventId.$valid}"
+                        ng-model="registration.eventId" required>
+                  <option value="" disabled selected>-- Choose an event --</option>
+                  <option ng-repeat="ev in events" value="{{ev.id}}">
+                    {{ev.name}} ({{ev.date | niceDate}})
+                  </option>
+                </select>
+                <div class="field-error" ng-if="submitted && registrationForm.eventId.$error.required">
+                  <i class="bi bi-exclamation-circle"></i> Please select an event to register for.
+                </div>
+              </div>
+
+              <div class="d-flex gap-3 mt-4 flex-wrap">
+                <button type="submit" class="btn-primary-cems">
+                  <i class="bi bi-check2-circle"></i> Confirm Registration
+                </button>
+                <a href="#/events" class="btn-outline-cems">
+                  <i class="bi bi-arrow-left"></i> Back to Events
+                </a>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="col-lg-5 slide-up delay-2">
+          <div class="glass-card p-4 mb-4">
+            <h5 class="mb-4" style="font-weight:700;">
+              <i class="bi bi-info-circle me-2 text-primary-cems"></i>Registration Info
+            </h5>
+            <ul style="color:var(--text-muted);font-size:0.88rem;padding-left:18px;line-height:2.2;">
+              <li>Registration is free and open to all students</li>
+              <li>Each student can register for multiple events</li>
+              <li>Confirmation sent to your email</li>
+              <li>Bring your college ID to the event</li>
+              <li>For team events, every member must register</li>
+            </ul>
+          </div>
+          <div class="glass-card p-4">
+            <h5 class="mb-4" style="font-weight:700;">
+              <i class="bi bi-calendar3 me-2 text-accent"></i>Open Events ({{events.length}})
+            </h5>
+            <ul class="recent-list" style="max-height:260px;overflow-y:auto;">
+              <li ng-repeat="ev in events">
+                <div class="rl-avatar" style="background:linear-gradient(135deg,var(--primary),var(--primary-light));">
+                  {{ev.icon}}
+                </div>
+                <div class="rl-info">
+                  <strong>{{ev.name}}</strong>
+                  <span>{{ev.date | niceDate}}</span>
+                </div>
+                <span class="rl-badge event-card-category" ng-class="ev.category | catClass">{{ev.category}}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </script>
+
+  <!-- ===== DASHBOARD ===== -->
+  <script type="text/ng-template" id="views/dashboard.html">
+  <div class="page-wrap">
+    <div class="page-header slide-up">
+      <h1 class="page-title"><i class="bi bi-speedometer2 me-2" style="font-size:2rem;"></i>Dashboard</h1>
+      <p class="page-subtitle">Real-time overview of all events, registrations, and platform activity.</p>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="row g-4 mb-5">
+      <div class="col-sm-6 col-xl-3 slide-up delay-1">
+        <div class="stat-card stat-card-1 h-100">
+          <span class="stat-delta delta-up">+{{stats.totalEvents}} total</span>
+          <div class="stat-icon"><i class="bi bi-calendar-event"></i></div>
+          <div class="stat-value text-primary-cems">{{stats.totalEvents}}</div>
+          <div class="stat-title">Total Events</div>
+          <div class="progress-bar-cems mt-2">
+            <div class="fill fill-primary" ng-style="{width: ((stats.totalEvents/10)*100) + '%'}"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-xl-3 slide-up delay-2">
+        <div class="stat-card stat-card-2 h-100">
+          <span class="stat-delta delta-up">+5 today</span>
+          <div class="stat-icon"><i class="bi bi-person-check"></i></div>
+          <div class="stat-value" style="color:var(--secondary);">{{stats.totalRegistrations}}</div>
+          <div class="stat-title">Total Registrations</div>
+          <div class="progress-bar-cems mt-2">
+            <div class="fill fill-secondary" ng-style="{width: ((stats.totalRegistrations/20)*100) + '%'}"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-xl-3 slide-up delay-3">
+        <div class="stat-card stat-card-3 h-100">
+          <span class="stat-delta delta-up">Next 30 days</span>
+          <div class="stat-icon"><i class="bi bi-calendar-check"></i></div>
+          <div class="stat-value text-accent">{{stats.upcomingCount}}</div>
+          <div class="stat-title">Upcoming Events</div>
+          <div class="progress-bar-cems mt-2">
+            <div class="fill fill-accent" ng-style="{width: ((stats.upcomingCount/stats.totalEvents)*100) + '%'}"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-xl-3 slide-up delay-4">
+        <div class="stat-card stat-card-4 h-100">
+          <span class="stat-delta delta-up">5 types</span>
+          <div class="stat-icon"><i class="bi bi-tags"></i></div>
+          <div class="stat-value" style="color:var(--warning);">{{stats.totalEvents}}</div>
+          <div class="stat-title">Active Events</div>
+          <div class="progress-bar-cems mt-2">
+            <div class="fill fill-warning" style="width:100%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECOND ROW -->
+    <div class="row g-4 mb-5">
+      <div class="col-lg-5 slide-up delay-1">
+        <div class="glass-card p-4 h-100">
+          <div class="section-header">
+            <h3><i class="bi bi-pie-chart me-2 text-primary-cems"></i>Category Breakdown</h3>
+          </div>
+          <div class="mb-4" ng-repeat="item in categoryItems">
+            <div class="d-flex justify-content-between mb-2" style="font-size:0.85rem;">
+              <span style="font-weight:600;" ng-style="{color: item.color}">{{item.name}}</span>
+              <span style="color:var(--text-muted);">
+                {{stats.categoryCounts[item.name]}} event(s) &mdash; {{catPercent(item.name)}}%
+              </span>
+            </div>
+            <div class="progress-bar-cems">
+              <div class="fill" ng-class="item.fillClass" ng-style="{width: catPercent(item.name) + '%'}"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-7 slide-up delay-2">
+        <div class="glass-card p-4 h-100">
+          <div class="section-header">
+            <h3><i class="bi bi-clock-history me-2 text-accent"></i>Recent Registrations</h3>
+            <a href="#/register" class="btn-outline-cems btn-sm-cems"><i class="bi bi-plus"></i> Add</a>
+          </div>
+          <ul class="recent-list">
+            <li ng-repeat="reg in recentRegistrations">
+              <div class="rl-avatar">{{reg.studentName | initials}}</div>
+              <div class="rl-info">
+                <strong>{{reg.studentName}}</strong>
+                <span>{{reg.eventName}} &bull; {{reg.department}}</span>
+              </div>
+              <span class="rl-badge" style="background:rgba(108,99,255,0.15);color:var(--primary-light);">
+                <i class="bi bi-check-circle me-1"></i>Registered
+              </span>
+            </li>
+          </ul>
+          <div ng-if="recentRegistrations.length === 0" class="empty-state" style="padding:30px 0;">
+            <div class="empty-icon" style="font-size:2rem;">&#128203;</div>
+            <p>No registrations yet.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- THIRD ROW -->
+    <div class="row g-4">
+      <div class="col-lg-7 slide-up delay-1">
+        <div class="glass-card p-4">
+          <div class="section-header">
+            <h3><i class="bi bi-calendar-week me-2 text-warning"></i>Upcoming Events</h3>
+            <a href="#/events" class="btn-outline-cems btn-sm-cems">View All</a>
+          </div>
+          <ul class="recent-list">
+            <li ng-repeat="ev in upcomingEvents">
+              <div class="rl-avatar" style="border-radius:var(--radius-sm);font-size:1.2rem;background:var(--bg-glass);">
+                {{ev.icon}}
+              </div>
+              <div class="rl-info">
+                <strong>{{ev.name}}</strong>
+                <span>{{ev.date | niceDate}}</span>
+              </div>
+              <span class="rl-badge event-card-category" ng-class="ev.category | catClass">{{ev.category}}</span>
+            </li>
+          </ul>
+          <div ng-if="upcomingEvents.length === 0" class="empty-state" style="padding:30px 0;">
+            <div class="empty-icon" style="font-size:2rem;">&#128197;</div>
+            <p>No upcoming events at this time.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-5 slide-up delay-2">
+        <div class="glass-card p-4 h-100">
+          <div class="section-header">
+            <h3><i class="bi bi-lightning me-2 text-warning"></i>Quick Actions</h3>
+          </div>
+          <div class="d-flex flex-column gap-3 mt-2">
+            <a href="#/add-event" class="btn-primary-cems" style="justify-content:center;padding:14px;">
+              <i class="bi bi-plus-circle"></i> Add New Event
+            </a>
+            <a href="#/register" class="btn-outline-cems" style="justify-content:center;padding:14px;">
+              <i class="bi bi-person-plus"></i> Register Student
+            </a>
+            <a href="#/events" class="btn-outline-cems" style="justify-content:center;padding:14px;">
+              <i class="bi bi-calendar-event"></i> Browse All Events
+            </a>
+            <a href="#/home" class="btn-outline-cems" style="justify-content:center;padding:14px;">
+              <i class="bi bi-house-door"></i> Go to Home
+            </a>
+          </div>
+          <div class="cems-alert cems-alert-info mt-4" style="flex-direction:column;gap:6px;">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-bar-chart-line alert-icon" style="font-size:1.1rem;"></i>
+              <strong>Platform Summary</strong>
+            </div>
+            <div style="font-size:0.83rem;color:var(--text-light);margin-top:4px;">
+              <span>{{stats.totalEvents}} events &bull; {{stats.totalRegistrations}} registrations &bull; {{stats.upcomingCount}} upcoming</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </script>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- App -->
+  <script src="app.js"></script>
+</body>
+</html>
