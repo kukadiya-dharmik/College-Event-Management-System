@@ -38,9 +38,9 @@
         templateUrl: 'views/add-event.html',
         controller : 'AddEventController',
         resolve: {
-          adminGuard: ['$q', '$location', 'AuthService', function ($q, $location, AuthService) {
+          adminGuard: ['$q', '$window', 'AuthService', function ($q, $window, AuthService) {
             if (AuthService.isAdmin()) { return true; }
-            $location.path('/login');
+            $window.location.href = 'login.html';
             return $q.reject('not-admin');
           }]
         }
@@ -67,86 +67,66 @@
      SHARED DATA SERVICE  (simple factory acting as data store)
   ============================================================ */
   app.factory('DataService', function () {
+    
+    var EVENTS_KEY = 'cems_events';
+    var REGISTRATIONS_KEY = 'cems_registrations';
 
-    var events = [
-      {
-        id: 1,
-        name       : 'National Tech Symposium 2026',
-        date       : '2026-03-25',
-        category   : 'Technical',
-        description: 'A premier national-level technology symposium featuring keynotes from industry leaders, paper presentations, hack competitions, and workshops on AI, Cloud & Cybersecurity.',
-        icon       : '💻'
-      },
-      {
-        id: 2,
-        name       : 'Cultural Night 2026',
-        date       : '2026-03-28',
-        category   : 'Cultural',
-        description: 'An electrifying evening celebrating arts, music, dance, drama and literary events from students across all departments. Don\'t miss the grand fashion show.',
-        icon       : '🎭'
-      },
-      {
-        id: 3,
-        name       : 'Annual Sports Meet',
-        date       : '2026-04-05',
-        category   : 'Sports',
-        description: 'Inter-departmental sports championships covering cricket, football, basketball, badminton, table tennis, athletics and many more exciting sports.',
-        icon       : '⚽'
-      },
-      {
-        id: 4,
-        name       : 'Research Paper Conference',
-        date       : '2026-04-12',
-        category   : 'Academic',
-        description: 'An academic conference inviting research papers from students and faculty across engineering, science, management and humanities disciplines.',
-        icon       : '📚'
-      },
-      {
-        id: 5,
-        name       : 'Hackathon 2026',
-        date       : '2026-04-18',
-        category   : 'Technical',
-        description: '24-hour non-stop coding marathon open to all students. Build innovative solutions to real-world problems and win exciting prizes and internship offers.',
-        icon       : '🚀'
-      },
-      {
-        id: 6,
-        name       : 'Inter-College Debate',
-        date       : '2026-04-22',
-        category   : 'Academic',
-        description: 'An intense inter-college debate competition on contemporary socio-economic and technological topics judged by distinguished faculty and alumni.',
-        icon       : '🎤'
+    // Initialize empty data in localStorage
+    function initializeData() {
+      if (!localStorage.getItem(EVENTS_KEY)) {
+        // Add a test event for testing delete functionality
+        var testEvent = [
+          {
+            id: 1,
+            name: 'Test Event for Delete',
+            date: '2026-12-25',
+            category: 'Technical',
+            description: 'This is a test event to verify the delete functionality works correctly.',
+            icon: '🧪'
+          }
+        ];
+        localStorage.setItem(EVENTS_KEY, JSON.stringify(testEvent));
       }
-    ];
 
-    var registrations = [
-      { id: 1, studentName: 'Aryan Patel',    email: 'aryan@example.com',   department: 'Computer Engineering', eventId: 1, eventName: 'National Tech Symposium 2026', timestamp: new Date('2026-03-10') },
-      { id: 2, studentName: 'Priya Shah',     email: 'priya@example.com',   department: 'Information Technology', eventId: 2, eventName: 'Cultural Night 2026',         timestamp: new Date('2026-03-11') },
-      { id: 3, studentName: 'Rahul Mehta',    email: 'rahul@example.com',   department: 'Mechanical Engineering', eventId: 3, eventName: 'Annual Sports Meet',           timestamp: new Date('2026-03-12') },
-      { id: 4, studentName: 'Sneha Trivedi',  email: 'sneha@example.com',   department: 'Electronics Engineering', eventId: 5, eventName: 'Hackathon 2026',              timestamp: new Date('2026-03-13') },
-      { id: 5, studentName: 'Karan Joshi',    email: 'karan@example.com',   department: 'Civil Engineering',      eventId: 4, eventName: 'Research Paper Conference',    timestamp: new Date('2026-03-13') }
-    ];
+      if (!localStorage.getItem(REGISTRATIONS_KEY)) {
+        localStorage.setItem(REGISTRATIONS_KEY, JSON.stringify([]));
+      }
+    }
+
+    // Initialize data on first load
+    initializeData();
 
     return {
-      getEvents       : function () { return events; },
-      addEvent        : function (ev) {
-        ev.id   = events.length ? events[events.length - 1].id + 1 : 1;
+      getEvents: function () {
+        return JSON.parse(localStorage.getItem(EVENTS_KEY) || '[]');
+      },
+      addEvent: function (ev) {
+        var events = this.getEvents();
+        ev.id = events.length ? Math.max(...events.map(e => e.id)) + 1 : 1;
         ev.icon = '📅';
-        events.push(angular.copy(ev));
+        events.push(ev);
+        localStorage.setItem(EVENTS_KEY, JSON.stringify(events));
       },
-      deleteEvent     : function (id) {
-        var idx = events.findIndex(function (e) { return e.id === id; });
-        if (idx !== -1) events.splice(idx, 1);
+      deleteEvent: function (id) {
+        var events = this.getEvents();
+        var filteredEvents = events.filter(function (e) { return e.id !== id; });
+        localStorage.setItem(EVENTS_KEY, JSON.stringify(filteredEvents));
       },
-      getRegistrations: function () { return registrations; },
-      addRegistration : function (reg) {
-        reg.id        = registrations.length ? registrations[registrations.length - 1].id + 1 : 1;
+      getRegistrations: function () {
+        return JSON.parse(localStorage.getItem(REGISTRATIONS_KEY) || '[]');
+      },
+      addRegistration: function (reg) {
+        var registrations = this.getRegistrations();
+        var events = this.getEvents();
+        reg.id = registrations.length ? Math.max(...registrations.map(r => r.id)) + 1 : 1;
         reg.timestamp = new Date();
-        var ev        = events.find(function (e) { return e.id === parseInt(reg.eventId); });
+        var ev = events.find(function (e) { return e.id === parseInt(reg.eventId); });
         reg.eventName = ev ? ev.name : 'Unknown Event';
-        registrations.push(angular.copy(reg));
+        registrations.push(reg);
+        localStorage.setItem(REGISTRATIONS_KEY, JSON.stringify(registrations));
       },
       getUpcomingEvents: function () {
+        var events = this.getEvents();
         var today = new Date();
         today.setHours(0, 0, 0, 0);
         return events.filter(function (e) { return new Date(e.date) >= today; });
@@ -160,18 +140,22 @@
   app.factory('AuthService', function () {
     var ADMIN_USER = 'admin';
     var ADMIN_PASS = 'admin123';
-    var _isAdmin   = false;
+    var ADMIN_KEY = 'cems_admin_logged_in';
 
     return {
       login: function (username, password) {
         if (username === ADMIN_USER && password === ADMIN_PASS) {
-          _isAdmin = true;
+          localStorage.setItem(ADMIN_KEY, 'true');
           return true;
         }
         return false;
       },
-      logout: function () { _isAdmin = false; },
-      isAdmin: function () { return _isAdmin; }
+      logout: function () { 
+        localStorage.removeItem(ADMIN_KEY);
+      },
+      isAdmin: function () { 
+        return localStorage.getItem(ADMIN_KEY) === 'true';
+      }
     };
   });
 
@@ -262,6 +246,7 @@
     }
   ]);
 
+
   /* ============================================================
      LOGIN CONTROLLER
   ============================================================ */
@@ -310,17 +295,8 @@
       $scope.deleteMsg    = null;
 
       // Make isAdmin available to the events.html template
-      $scope.isAdmin      = function () { return AuthService.isAdmin(); };
-
-      $scope.deleteEvent  = function (id) {
-        if (!AuthService.isAdmin()) {
-          alert('Unauthorized: Only administrators can delete events.');
-          return;
-        }
-        DataService.deleteEvent(id);
-        $scope.events    = DataService.getEvents();
-        $scope.deleteMsg = 'Event deleted successfully.';
-        setTimeout(function () { $scope.$apply(function () { $scope.deleteMsg = null; }); }, 3000);
+      $scope.isAdmin = function() {
+        return AuthService.isAdmin();
       };
 
       $scope.goRegister = function (ev) {
@@ -330,6 +306,19 @@
       $scope.catClass = function (cat) {
         var map = { Technical:'cat-technical', Cultural:'cat-cultural', Sports:'cat-sports', Academic:'cat-academic', Other:'cat-other' };
         return map[cat] || 'cat-other';
+      };
+
+      $scope.deleteEvent = function (id) {
+        if (confirm('Are you sure you want to delete this event?')) {
+          DataService.deleteEvent(id);
+          $scope.events = DataService.getEvents(); // Refresh the events list
+          $scope.deleteMsg = 'Event deleted successfully!';
+          setTimeout(function () { 
+            $scope.$apply(function () { 
+              $scope.deleteMsg = null; 
+            }); 
+          }, 3000);
+        }
       };
     }
   ]);
@@ -423,24 +412,64 @@
   ============================================================ */
   app.controller('DashboardController', ['$scope', 'DataService',
     function ($scope, DataService) {
-      var events        = DataService.getEvents();
-      var registrations = DataService.getRegistrations();
-      var upcoming      = DataService.getUpcomingEvents();
+      
+      // Function to refresh all dashboard data
+      function refreshDashboardData() {
+        var events        = DataService.getEvents();
+        var registrations = DataService.getRegistrations();
+        var upcoming      = DataService.getUpcomingEvents();
 
-      $scope.stats = {
-        totalEvents       : events.length,
-        totalRegistrations: registrations.length,
-        upcomingCount     : upcoming.length,
-        categoryCounts    : {}
-      };
+        $scope.stats = {
+          totalEvents       : events.length,
+          totalRegistrations: registrations.length,
+          upcomingCount     : upcoming.length,
+          categoryCounts    : {}
+        };
 
-      // Category breakdown
-      ['Technical', 'Cultural', 'Sports', 'Academic', 'Other'].forEach(function (cat) {
-        $scope.stats.categoryCounts[cat] = events.filter(function (e) { return e.category === cat; }).length;
-      });
+        // Category breakdown
+        ['Technical', 'Cultural', 'Sports', 'Academic', 'Other'].forEach(function (cat) {
+          $scope.stats.categoryCounts[cat] = events.filter(function (e) { return e.category === cat; }).length;
+        });
 
-      $scope.recentRegistrations = registrations.slice(-5).reverse();
-      $scope.upcomingEvents      = upcoming.slice(0, 4);
+        $scope.recentRegistrations = registrations.slice(-5).reverse();
+        $scope.upcomingEvents      = upcoming.slice(0, 4);
+
+        // Calculate real-time trends
+        var today = new Date();
+        var todayRegistrations = registrations.filter(function(reg) {
+          var regDate = new Date(reg.timestamp);
+          return regDate.toDateString() === today.toDateString();
+        }).length;
+
+        var thisWeekEvents = events.filter(function(ev) {
+          var evDate = new Date(ev.date);
+          var weekFromNow = new Date();
+          weekFromNow.setDate(weekFromNow.getDate() + 7);
+          return evDate >= today && evDate <= weekFromNow;
+        }).length;
+
+        // Update trends with real-time data
+        $scope.trends = {
+          events       : '+' + thisWeekEvents + ' this week',
+          registrations: '+' + todayRegistrations + ' today',
+          upcoming     : upcoming.length + ' upcoming',
+          categories   : events.length + ' total'
+        };
+      }
+
+      // Initial data load
+      refreshDashboardData();
+
+      // Watch for changes in events and registrations
+      $scope.$watch(
+        function () { return DataService.getEvents().length; },
+        function () { refreshDashboardData(); }
+      );
+
+      $scope.$watch(
+        function () { return DataService.getRegistrations().length; },
+        function () { refreshDashboardData(); }
+      );
 
       // Category breakdown items for ng-repeat in template
       $scope.categoryItems = [
@@ -453,16 +482,9 @@
 
       // Progress widths (percentage of total)
       $scope.catPercent = function (cat) {
+        var events = DataService.getEvents();
         if (!events.length) return 0;
         return Math.round(($scope.stats.categoryCounts[cat] / events.length) * 100);
-      };
-
-      // Simulate trend (static for this demo)
-      $scope.trends = {
-        events       : '+2 this week',
-        registrations: '+5 today',
-        upcoming     : 'Next 30 days',
-        categories   : events.length + ' total'
       };
     }
   ]);

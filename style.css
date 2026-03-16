@@ -537,6 +537,13 @@ body {
 }
 .btn-danger-cems:hover { transform: translateY(-2px); filter: brightness(1.1); }
 
+/* Ensure delete button is clickable and properly styled */
+.event-card-footer .btn-danger-cems {
+  pointer-events: auto !important;
+  z-index: 10 !important;
+  position: relative !important;
+}
+
 /* ====================================================
    SEARCH & FILTER BAR
    ==================================================== */
@@ -1078,6 +1085,7 @@ textarea.cems-input {
   border-color: var(--danger);
 }
 
+
 /* Admin badge */
 .admin-badge-nav {
   background: linear-gradient(135deg, rgba(108,99,255,0.2), rgba(139,133,255,0.1));
@@ -1090,5 +1098,28 @@ textarea.cems-input {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+}
+
+/* Responsive adjustments for header */
+@media (max-width: 991px) {
+  #navMenu .navbar-nav {
+    padding: 1rem 0 0.5rem;
+    gap: 12px;
+  }
+  #navMenu .nav-item {
+    text-align: center;
+  }
+  .cems-navbar .badge-pill-events,
+  .cems-navbar .admin-badge-nav {
+    display: inline-block;
+    margin: 8px auto;
+  }
+  .cems-navbar .btn-logout-cems, 
+  .cems-navbar .btn-primary-cems {
+    width: 100%;
+    justify-content: center;
+    margin-top: 8px;
+    padding: 10px;
+  }
 }
 

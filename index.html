@@ -15,9 +15,9 @@
   <link rel="stylesheet" href="style.css" />
 
   <!-- AngularJS 1.8 -->
-  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
-  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular-route.min.js"></script>
-  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular-animate.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular-route.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular-animate.min.js"></script>
 </head>
 <body ng-controller="MainController">
 
@@ -119,94 +119,6 @@
        This avoids XHR file:// CORS errors when opening directly.
   ============================================================== -->
 
-  <!-- ===== LOGIN PAGE ===== -->
-  <script type="text/ng-template" id="views/login.html">
-  <div class="login-page">
-    <div class="login-card">
-      <div class="login-logo"><i class="bi bi-shield-lock-fill"></i></div>
-      <h2 class="login-title">Admin Login</h2>
-      <p class="login-subtitle">Access the admin panel to manage events and view the dashboard.</p>
-
-      <!-- Credentials hint -->
-      <div class="admin-hint">
-        <i class="bi bi-info-circle hint-icon"></i>
-        <span>Use username <code>admin</code> and password <code>admin123</code> to login.</span>
-      </div>
-
-      <!-- Error alert -->
-      <div ng-if="errorMsg" class="cems-alert cems-alert-danger mb-4">
-        <i class="bi bi-exclamation-triangle alert-icon"></i>
-        <div class="alert-body">
-          <strong>Login Failed</strong>
-          <p>{{errorMsg}}</p>
-        </div>
-      </div>
-
-      <form name="loginForm" ng-submit="doLogin(loginForm)" novalidate>
-
-        <!-- Username -->
-        <div class="form-group-cems">
-          <label class="form-label-cems" for="loginUser">
-            Username <span class="required">*</span>
-          </label>
-          <input
-            type="text"
-            id="loginUser"
-            name="username"
-            class="cems-input w-100"
-            ng-class="{'is-invalid': submitted && loginForm.username.$invalid, 'is-valid': submitted && loginForm.username.$valid}"
-            placeholder="Enter admin username"
-            ng-model="credentials.username"
-            required
-            autocomplete="username"
-          />
-          <div class="field-error" ng-if="submitted && loginForm.username.$error.required">
-            <i class="bi bi-exclamation-circle"></i> Username is required.
-          </div>
-        </div>
-
-        <!-- Password -->
-        <div class="form-group-cems">
-          <label class="form-label-cems" for="loginPass">
-            Password <span class="required">*</span>
-          </label>
-          <div class="input-wrap">
-            <input
-              id="loginPass"
-              name="password"
-              class="cems-input w-100"
-              ng-attr-type="{{showPass ? 'text' : 'password'}}"
-              ng-class="{'is-invalid': submitted && loginForm.password.$invalid, 'is-valid': submitted && loginForm.password.$valid}"
-              placeholder="Enter admin password"
-              ng-model="credentials.password"
-              required
-              autocomplete="current-password"
-            />
-            <button type="button" class="eye-btn" ng-click="showPass = !showPass" tabindex="-1">
-              <i class="bi" ng-class="showPass ? 'bi-eye-slash' : 'bi-eye'"></i>
-            </button>
-          </div>
-          <div class="field-error" ng-if="submitted && loginForm.password.$error.required">
-            <i class="bi bi-exclamation-circle"></i> Password is required.
-          </div>
-        </div>
-
-        <!-- Submit -->
-        <button type="submit" class="btn-primary-cems w-100 mt-2" style="justify-content:center; padding:13px;">
-          <i class="bi bi-shield-check"></i>
-          Sign In as Admin
-        </button>
-
-        <div class="text-center mt-4">
-          <a href="#/home" style="color:var(--text-muted); font-size:0.85rem; text-decoration:none;">
-            <i class="bi bi-arrow-left me-1"></i>Back to Home
-          </a>
-        </div>
-
-      </form>
-    </div>
-  </div>
-  </script>
 
   <!-- ===== HOME ===== -->
   <script type="text/ng-template" id="views/home.html">
@@ -421,15 +333,19 @@
           <div class="event-card-body">
             <p class="event-card-desc">{{ev.description}}</p>
             <div class="event-card-footer mt-auto">
-              <a href="#/register" class="btn-primary-cems btn-sm-cems">
-                <i class="bi bi-person-plus"></i> Register
-              </a>
-              <span class="detail-pill" ng-if="!isAdmin()">
+              <div class="d-flex gap-2 align-items-center">
+                <!-- Show Register button for regular users -->
+                <a href="#/register" ng-if="!isAdmin()" class="btn-primary-cems btn-sm-cems">
+                  <i class="bi bi-person-plus"></i> Register
+                </a>
+                <!-- Show Delete button for admin users -->
+                <button ng-show="isAdmin()" class="btn-danger-cems btn-sm-cems" ng-click="deleteEvent(ev.id)" title="Delete Event" style="z-index: 10; position: relative;">
+                  <i class="bi bi-trash3"></i> Delete
+                </button>
+              </div>
+              <span class="detail-pill">
                 <i class="bi bi-calendar3"></i> {{ev.date | niceDate}}
               </span>
-              <button class="btn-danger-cems" ng-click="deleteEvent(ev.id)" title="Delete event" ng-if="isAdmin()">
-                <i class="bi bi-trash3"></i>
-              </button>
             </div>
           </div>
         </div>
